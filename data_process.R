@@ -13,8 +13,13 @@ quickpsy(raw_data$Regular, x = soa, k = resp, grouping = .(sub), within = .(mInt
 quickpsy(raw_data$Regular %>% filter(sub == 21), x = soa, k = resp,  within = .(mIntv), 
          lapses = TRUE, guess = TRUE, bootstrap = 'none', 
          parini = list(c(1,250),c(1,200),c(0,0.3),c(0,0.3))) -> exp1sub1
-fig2a <- plotcurves(exp1sub1, threshold = FALSE) + legend_pos(c(0.2,0.75)) + xlab ('ISI (ms') + 
-  ylab('Prop. of group motion')
+#fig2a <- plotcurves(exp1sub1, threshold = FALSE) 
+fig2a <- ggplot() + 
+  geom_point(data = exp1sub1$averages, aes(x = soa, y = prob, shape = mIntv), size = 2) + 
+  geom_line(data = exp1sub1$curves, aes(x, y , linetype = mIntv)) + 
+  legend_pos(c(0.2,0.8)) + xlab ('ISI (ms)') + 
+  ylab('Prop. of group motion') + 
+  scale_shape_discrete(solid = FALSE)
 fig2a
 
 # mean PSE and anovas
@@ -49,8 +54,14 @@ quickpsy(raw_data$Irregular, x = soa, k = resp, grouping = .(sub), within = .(mI
 quickpsy(raw_data$Irregular %>% filter(sub == 13), x = soa, k = resp,  within = .(mIntv), 
          lapses = TRUE, guess = TRUE, bootstrap = 'none', 
          parini = list(c(1,250),c(1,200),c(0,0.3),c(0,0.3))) -> exp2sub1
-fig2b <- plotcurves(exp2sub1, threshold = FALSE) + legend_pos(c(0.2,0.75)) + xlab ('ISI (ms') + 
-  ylab('Prop. of group motion')
+#fig2b <- plotcurves(exp2sub1, threshold = FALSE) + legend_pos(c(0.2,0.75)) + xlab ('ISI (ms') + 
+#  ylab('Prop. of group motion')
+fig2b <- ggplot() + 
+  geom_point(data = exp2sub1$averages, aes(x = soa, y = prob, shape = mIntv), size = 2) + 
+  geom_line(data = exp2sub1$curves, aes(x, y , linetype = mIntv)) + 
+  legend_pos(c(0.2,0.8)) + xlab ('ISI (ms)') + 
+  ylab('Prop. of group motion') + 
+  scale_shape_discrete(solid = FALSE)
 fig2b
 
 # plot means and ANOVA analysis
@@ -101,8 +112,13 @@ quickpsy(raw_data$Variance, x = soa, k = resp, grouping = .(sub), within = .(var
 exp3$thresholds %>%  group_by(var, mIntv) %>% summarise(mpse = mean(thre), se = sd(thre)/sqrt(nlevels(sub)-1)) -> mexp3
 exp3$thresholds  %>% ezANOVA(data =., dv = thre, wid = sub, within = .(var, mIntv))
 
-fig3 <- ggplot(mexp3, aes(mIntv, mpse, ymin = mpse - se, ymax = mpse + se, color = var, group = var)) + 
-  geom_line() + geom_errorbar(width = 0.2) + geom_point() + legend_pos(c(0.8,0.8)) + 
+pd <- position_dodge(width = 0.1)
+fig3 <- ggplot(mexp3, aes(mIntv, mpse, ymin = mpse - se, ymax = mpse + se, 
+                          linetype = var, shape = var, group = var)) + 
+  geom_line(position = pd) + geom_errorbar(width = 0.2, position = pd) + 
+  geom_point(size = 2, position = pd) + 
+  legend_pos(c(0.8,0.85)) + 
+  scale_shape_discrete(solid = FALSE) +
   xlab('Relative mean auditory intervals (ms)') + ylab('PSEs (ms)')
 fig3
 ggsave(filename = 'figure3.pdf', fig3, width = 6, height = 4)
@@ -121,9 +137,14 @@ quickpsy(raw_data$Geometry, x = soa, k = resp, grouping = .(sub), within = .(mIn
 quickpsy(raw_data$Geometry %>% filter(sub == 6), x = soa, k = resp, within = .(mIntv), 
          lapses = TRUE, guess = TRUE, bootstrap = 'none', 
          parini = list(c(1,250),c(1,200),c(0,0.3),c(0,0.3))) -> exp4sub1
-fig4a <- plotcurves(exp4sub1, threshold = FALSE) + legend_pos(c(0.2,0.75)) + xlab ('ISI (ms') + 
-  ylab('Prop. of group motion')
-
+#fig4a <- plotcurves(exp4sub1, threshold = FALSE) + legend_pos(c(0.2,0.75)) + xlab ('ISI (ms') + 
+#  ylab('Prop. of group motion')
+fig4a <- ggplot() + 
+  geom_point(data = exp4sub1$averages, aes(x = soa, y = prob, shape = mIntv), size = 2) + 
+  geom_line(data = exp4sub1$curves, aes(x, y , linetype = mIntv)) + 
+  legend_pos(c(0.2,0.8)) + xlab ('ISI (ms)') + 
+  ylab('Prop. of group motion') + 
+  scale_shape_discrete(solid = FALSE)
 # plot means and ANOVA analysis
 exp4$thresholds  %>% group_by( mIntv) %>% summarise(mpse = mean(thre), se = sd(thre)/sqrt(nlevels(sub)-1)) -> mexp4
 exp4$thresholds  %>% ezANOVA(data =., dv = thre, wid = sub, within = .( mIntv))
@@ -142,6 +163,31 @@ ggsave(filename = 'figure4.pdf', fig4, width = 8, height = 4)
 lme_exp4 = lme(thre ~ mIntv, data = exp4$thresholds, random = ~1|sub)
 anova(lme_exp4)
 summary(glht(lme_exp4, linfct = mcp(mIntv = 'Tukey')), test = adjusted(type = 'bonferroni'))
+
+# a control experiment
+
+dat6 = read.csv('exp6.csv', header = FALSE)
+names(dat6) <-  c('motion','Interval','pos','soa','resp','rt','dump','subno')
+dat6$soa = dat6$soa*30 + 20
+dat6$Interval = factor(dat6$Interval, labels = c("Short","Long"))
+
+quickpsy(dat6, x = soa, k = resp, grouping = .(subno), within = .(Interval), 
+         lapses = TRUE, guess = TRUE, bootstrap = 'none', 
+         parini = list(c(1,250),c(1,200),c(0,0.3),c(0,0.3))) -> exp6
+
+# select one participant
+quickpsy(dat6 %>% filter(subno == 3), x = soa, k = resp, within = .(Interval), 
+         lapses = TRUE, guess = TRUE, bootstrap = 'none', 
+         parini = list(c(1,250),c(1,200),c(0,0.3),c(0,0.3))) -> exp6sub1
+
+fig5 <- ggplot() + 
+  geom_point(data = exp6sub1$averages, aes(x = soa, y = prob, shape = Interval), size = 2) + 
+  geom_line(data = exp6sub1$curves, aes(x, y , linetype = Interval)) + 
+  legend_pos(c(0.2,0.8)) + xlab ('ISI (ms)') + 
+  ylab('Prop. of group motion') + 
+  scale_shape_discrete(solid = FALSE)
+fig5
+ggsave(filename = 'figure5.pdf', fig5, width = 4, height = 4)
 
 # Bayesian Modeling  
 # read mean responses from formal experiments, together with the baseline conditions
@@ -181,22 +227,28 @@ colnames(stat_tab) <- c("Exp.", "BIC P.I.", "R2 P.I.",
 knitr::kable(stat_tab, digits=2)
 
 # plot predicted responses
-resp.predicted %>%
+fig6 <- resp.predicted %>%
   #resp.fullfusion%>%
   group_by(cond, mIntv,soa ) %>%
   summarise(mr = mean(m), mse = mean(mse),
             mpred = mean(mresp)) %>% 
-  ggplot(aes(soa, y = mr,  shape = mIntv, color = mIntv, linetype = mIntv)) + geom_point(size = 2) + 
-  geom_line(aes(y=mpred)) + 
+  ggplot(aes(soa, y = mr,  shape = mIntv)) + 
+  geom_point(size = 2) + 
+  geom_line(aes(y=mpred, linetype = mIntv)) + 
   geom_errorbar(aes(x = soa, ymin = mr - mse, ymax = mr + mse), width = 5) + 
   scale_shape(solid = FALSE) + xlab('ISI (ms)') + 
   ylab('Prop. of group motion')+  facet_wrap(~cond, nrow = 2) + figTheme()
 
+fig6
+ggsave(filename = 'figure6.pdf', fig6, width = 8, height = 6)
+
 # predict weights as function SOA
-resp.predicted %>% group_by(exp, mIntv, soa) %>% summarise(mw = mean(w)) %>% 
-  ggplot(aes(x = soa, y = mw, color = mIntv, linetype = mIntv, shape = mIntv)) + geom_line() + 
-  geom_point(size = 2) +facet_wrap(~exp) + xlab('ISI (ms)') + ylab('Means auditory weights') + 
+fig7 = resp.predicted %>% group_by(exp, mIntv, soa) %>% summarise(mw = mean(w)) %>% 
+  ggplot(aes(x = soa, y = mw, shape = mIntv)) + geom_line(aes( linetype = mIntv)) + 
+  geom_point(size = 2) +facet_wrap(~exp) + xlab('ISI (ms)') + ylab('Means auditory weights (wPam)') + 
   scale_shape(solid = FALSE) + figTheme()
+fig7
+ggsave(filename = 'figure7.pdf', fig7, width = 8, height = 4)
 
 pse.predicted <- predictPSEnew(resp.predicted)
 #pse.predicted <- predictPSE(resp.fullfusion)
@@ -210,4 +262,4 @@ fig_pses <- pse.predicted %>%
   ggplot(., aes(x=pse, y = abs(ppse), shape = exp)) + geom_point() +geom_abline(slope = 1, linetype = 'dashed') + xlab('Observed PSEs (ms)') + ylab('Predicted PSEs (ms)')+ 
   figTheme() 
 fig_pses
-#ggsave(filename = 'pses.pdf', fig_pses, width = 5, height = 3)
+ggsave(filename = 'figure8.pdf', fig_pses, width = 5, height = 3)

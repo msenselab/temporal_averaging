@@ -28,9 +28,9 @@ readData <- function(fn) {
 # function to plot mean PSE bars
 psebar <- function(data){
   data %>% group_by(mIntv) %>% summarise(m = mean(pse), se = sd(pse)/sqrt(nlevels(sub)-1)) %>%
-    ggplot(.,aes(x=mIntv, y=m, color=mIntv, fill=mIntv)) + 
-    geom_bar(stat='identity', width=0.5) + 
-    geom_errorbar(aes(ymin=m-se, ymax=m+se, color=mIntv), stat='identity', width=0.3) + 
+    ggplot(.,aes(x=mIntv, y=m)) + 
+    geom_bar(stat='identity', width=0.5, fill = 'grey', color = 'black') + 
+    geom_errorbar(aes(ymin=m, ymax=m+se), stat='identity', width=0.3) + 
     coord_cartesian(ylim=c(100,175)) + xlab('Relative mean auditory interval (ms)') + ylab('PSEs (ms)') + 
     theme(legend.position="none")
 }
